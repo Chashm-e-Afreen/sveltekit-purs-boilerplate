@@ -1,0 +1,39 @@
+# Start with a base Alpine Node.js image
+# It's recommended to use a specific version for stability, e.g., node:18-alpine
+# You can check available versions on Docker Hub: https://hub.docker.com/_/node
+FROM node:20-alpine
+
+# Set the working directory inside the container
+
+RUN apk add --no-cache curl && \
+    npm install -g pnpm && \
+    apk del curl && \
+    apk add git && \
+    apk add watchexec && \
+    apk add wget && \
+    rm -rf /tmp/* /var/cache/apk/* ~/.npm /usr/lib/node_modules/npm/npmrc ~/.config/configstore
+
+# Optional: Set pnpm as the default package manager for future commands
+# This ensures that if you run `npm install` inside the container, it will actually use pnpm
+FROM node:20-alpine
+
+# Install tools
+RUN apk add --no-cache git wget watchexec curl && \
+    npm install -g pnpm && \
+    rm -rf /tmp/* /var/cache/apk/* ~/.npm /usr/lib/node_modules/npm/npmrc ~/.config/configstore
+
+# Install PureScript compiler
+RUN wget https://github.com/purescript/purescript/releases/download/v0.15.16-7/linux64.tar.gz \
+ && tar -xvf linux64.tar.gz && cp purescript/purs /bin/ \
+ && rm -rf linux64.tar.gz purescript
+
+# Install spago globally
+RUN npm install -g spago@next
+
+# Create workspace directory
+WORKDIR /app
+
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+CMD ["sh", "/app/start.sh"]
